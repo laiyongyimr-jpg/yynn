@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Spin to Win | Discount Wheel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    /* Main card container */
+    .promo-card {
+      max-width: 650px;
+      width: 100%;
+      background: rgba(255, 248, 225, 0.98);
+      border-radius: 68px;
+      box-shadow: 0 30px 45px rgba(0, 0, 0, 0.4), 0 8px 18px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.6);
+      overflow: hidden;
+      backdrop-filter: blur(2px);
+      transition: all 0.2s ease;
+    }
+
+    /* Header */
+    .header {
+      background: #f9b81b;
+      padding: 1.5rem 1.8rem 1.2rem;
+      text-align: center;
+      border-bottom: 4px solid #d48f0b;
+    }
+
+    .header h1 {
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #2c2b28;
+      text-shadow: 2px 2px 0 rgba(255,215,120,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .header h1 span {
+      font-size: 2rem;
+    }
+
+    .sub {
+      font-weight: 600;
+      color: #3c2a0b;
+      background: #ffecb3;
+      display: inline-block;
+      padding: 0.3rem 1.2rem;
+      border-radius: 60px;
+      font-size: 0.85rem;
+      margin-top: 12px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Wheel + pointer section */
+    .wheel-area {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin: 2rem 1rem 1.5rem;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3), 0 0 0 10px #f9e0a0, 0 0 0 14px #b97f10;
+      transition: box-shadow 0.2s;
+      background: #f3e5c0;
+    }
+
+    /* Pointer (static triangle) */
+    .pointer-container {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      filter: drop-shadow(0 6px 6px rgba(0,0,0,0.3));
+    }
+
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 26px solid transparent;
+      border-right: 26px solid transparent;
+      border-top: 52px solid #e03a3a;
+      position: relative;
+    }
+
+    .pointer::after {
+      content: "▼";
+      position: absolute;
+      top: -56px;
+      left: -17px;
+      font-size: 26px;
+      color: #ffd966;
+      text-shadow: 0 1px 2px black;
+      opacity: 0.7;
+    }
+
+    /* Spin button & controls */
+    .action-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin: 0 1.5rem 1.8rem;
+    }
+
+    .spin-btn {
+      background: radial-gradient(circle at 30% 10%, #ffb347, #ff7e05);
+      border: none;
+      color: white;
+      font-size: 1.8rem;
+      font-weight: 800;
+      padding: 0.9rem 2rem;
+      width: 90%;
+      max-width: 260px;
+      border-radius: 60px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 10px 0 #b4510a;
+      transition: 0.07s linear;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .spin-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 5px 0 #b4510a;
+    }
+
+    .spin-btn:disabled {
+      opacity: 0.6;
+      transform: translateY(0);
+      cursor: not-allowed;
+      filter: grayscale(0.1);
+      box-shadow: 0 10px 0 #b4510a;
+    }
+
+    .result-card {
+      background: #2b2b28;
+      border-radius: 60px;
+      padding: 0.7rem 1rem;
+      text-align: center;
+      width: 100%;
+      margin-top: 0.2rem;
+    }
+
+    .result-text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #ffdd99;
+      background: #1f1f1c;
+      border-radius: 50px;
+      padding: 0.5rem;
+    }
+
+    .result-text span {
+      color: #f9b81b;
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .discount-badge {
+      font-size: 1rem;
+      color: #f0dbaa;
+      margin-top: 6px;
+    }
+
+    .info-footer {
+      background: #e9dbc7;
+      padding: 1rem 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #4c3a28;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-top: 1px solid #d6c29d;
+    }
+
+    .info-footer span {
+      background: #fff2e0;
+      padding: 5px 12px;
+      border-radius: 40px;
+      font-weight: 600;
+    }
+
+    @keyframes pulseGlow {
+      0% { text-shadow: 0 0 0 gold; }
+      100% { text-shadow: 0 0 8px #ffb347; }
+    }
+
+    .win-animation {
+      animation: pulseGlow 0.4s ease-in-out 3;
+    }
+
+    @media (max-width: 480px) {
+      .promo-card {
+        border-radius: 48px;
+      }
+      canvas {
+        width: 260px;
+        height: 260px;
+      }
+      .header h1 {
+        font-size: 1.8rem;
+      }
+      .spin-btn {
+        font-size: 1.5rem;
+        padding: 0.7rem 1rem;
+      }
+      .pointer {
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+        border-top: 42px solid #e03a3a;
+      }
+      .pointer::after {
+        top: -46px;
+        left: -13px;
+        font-size: 20px;
+      }
+      .pointer-container {
+        top: -22px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="promo-card">
+  <div class="header">
+    <h1>
+      <span>🎡</span> SPIN & WIN <span>💰</span>
+    </h1>
+    <div class="sub">✨ one lucky spin · instant discounts ✨</div>
+  </div>
+
+  <div class="wheel-area">
+    <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    <div class="pointer-container">
+      <div class="pointer"></div>
+    </div>
+  </div>
+
+  <div class="action-panel">
+    <button class="spin-btn" id="spinButton">🎲 SPIN NOW 🎲</button>
+    <div class="result-card" id="resultCard">
+      <div class="result-text" id="resultMessage">
+        🎁 click SPIN to claim 🎁
+      </div>
+      <div class="discount-badge" id="discountNote">
+        $10 | $20 | $30 | $40 | $50
+      </div>
+    </div>
+  </div>
+  <div class="info-footer">
+    <span>🏷️ $10 OFF</span>
+    <span>🏷️ $20 OFF</span>
+    <span>🏷️ $30 OFF</span>
+    <span>🏷️ $40 OFF</span>
+    <span>🏷️ $50 OFF</span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // -------- Prize configuration (discounts) ----------
+    const SEGMENTS = ["$10", "$20", "$30", "$40", "$50"];
+    const DISCOUNT_VALUES = [10, 20, 30, 40, 50];
+    const SEGMENT_COLORS = [
+      "#F4C542", // gold 10
+      "#E68A2E", // orange 20
+      "#D65C2C", // deep rust 30
+      "#B83B2A", // crimson 40
+      "#9C2E1F"  // rich burgundy 50
+    ];
+    
+    const PI = Math.PI;
+    const TAU = PI * 2;
+    const segmentAngle = TAU / SEGMENTS.length;   // each slice angle in radians
+
+    // wheel state
+    let currentRotation = 0;          // accumulated rotation in radians
+    let isSpinning = false;
+    let animationId = null;
+    let spinStartTime = 0;
+    let spinDuration = 2000;           // 2 seconds spin animation
+    let finalSegmentIndex = -1;
+    
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinButton');
+    const resultMessageDiv = document.getElementById('resultMessage');
+    const discountNoteSpan = document.getElementById('discountNote');
+    
+    // set canvas dimensions for crisp rendering (device pixel ratio friendly)
+    function resizeCanvas() {
+      const size = Math.min(500, window.innerWidth * 0.7);
+      const canvasSize = 500; // we keep fixed logical 500px
+      canvas.width = 500;
+      canvas.height = 500;
+      canvas.style.width = `${Math.min(320, window.innerWidth * 0.7)}px`;
+      canvas.style.height = 'auto';
+      // re-draw after size adjustment
+      drawWheel();
+    }
+    
+    // Draw the wheel based on currentRotation (radians)
+    function drawWheel() {
+      if (!ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      const centerX = w / 2;
+      const centerY = h / 2;
+      const radius = w * 0.46; // leave space for pointer & text
+      
+      ctx.clearRect(0, 0, w, h);
+      
+      // draw each segment
+      for (let i = 0; i < SEGMENTS.length; i++) {
+        const start = i * segmentAngle + currentRotation;
+        const end = (i + 1) * segmentAngle + currentRotation;
+        
+        // draw pie slice
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, start, end);
+        ctx.closePath();
+        
+        ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+        ctx.fill();
+        ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#FFF9E8";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // draw text inside slice
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(start + segmentAngle / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const textRadius = radius * 0.68;
+        ctx.font = `bold ${Math.max(20, 28 * (radius / 220))}px "Inter", system-ui`;
+        ctx.fillStyle = "#2F241B";
+        ctx.shadowBlur = 0;
+        ctx.fillText(SEGMENTS[i], textRadius, 6);
+        ctx.restore();
+      }
+      
+      // draw inner circle and central decorative
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.18, 0, TAU);
+      ctx.fillStyle = "#FFD966";
+      ctx.shadowBlur = 0;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.12, 0, TAU);
+      ctx.fillStyle = "#F9B81B";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.07, 0, TAU);
+      ctx.fillStyle = "#D48F0B";
+      ctx.fill();
+      
+      // outer ring spark
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius + 4, 0, TAU);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#FFE3A4";
+      ctx.stroke();
+    }
+    
+    // Get segment index based on angle (which segment the pointer is pointing at)
+    // pointer is fixed at top (angle = -PI/2, i.e., 12 o'clock direction)
+    // we need to find which segment currently lies under the pointer direction (angle = -PI/2)
+    function getCurrentSegmentIndex() {
+      // pointer direction angle in canvas coordinates: -PI/2 (UP)
+      const pointerAngle = -PI / 2;
+      // For each segment, we check if pointerAngle falls between start and end angles of the segment (with currentRotation)
+      for (let i = 0; i < SEGMENTS.length; i++) {
+        let start = i * segmentAngle + currentRotation;
+        let end = (i + 1) * segmentAngle + currentRotation;
+        // Normalize angles to [0, TAU)
+        let normPointer = ((pointerAngle % TAU) + TAU) % TAU;
+        let normStart = ((start % TAU) + TAU) % TAU;
+        let normEnd = ((end % TAU) + TAU) % TAU;
+        
+        if (normStart < normEnd) {
+          if (normPointer >= normStart && normPointer < normEnd) return i;
+        } else {
+          // segment wraps around 0 rad
+          if (normPointer >= normStart || normPointer < normEnd) return i;
+        }
+      }
+      // fallback (should never happen)
+      return 0;
+    }
+    
+    // calculate random final segment with smooth fair distribution (true random)
+    function getRandomSegment() {
+      return Math.floor(Math.random() * SEGMENTS.length);
+    }
+    
+    // Easing out cubic for smooth slowdown
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+    
+    // spin animation using requestAnimationFrame
+    function startSpin() {
+      if (isSpinning) return;
+      
+      // Choose winning segment (random)
+      const targetSegment = getRandomSegment();
+      const targetDiscount = DISCOUNT_VALUES[targetSegment];
+      finalSegmentIndex = targetSegment;
+      
+      // currentRotation (radians) is the wheel's existing orientation
+      // We need to compute additional rotation so that after spinning, the pointer points to targetSegment
+      // The pointer angle is fixed at -PI/2. We want that after spin, the segment which should be under pointer is targetSegment.
+      // Current segment under pointer (before spin) = getCurrentSegmentIndex() from currentRotation
+      // We'll compute required final rotation: we need that when spin ends, the wheel's finalRotation yields that
+      // targetSegment aligns with pointer.
+      
+      // Let's find the final rotation (finalRotation) such that getSegmentIndexAtRotation(finalRotation) == targetSegment.
+      // Actually we can compute the delta angle to rotate.
+      
+      // We want: For a given final rotation R_final, the pointer at -PI/2 points to segment index = targetSegment.
+      // Solve for R_final so that startAngle <= pointerAngle_mod < endAngle
+      // For each segment i, start angle = i * segmentAngle + R_final.
+      // Condition: i = targetSegment
+      // So pointerAngle ( -PI/2 ) should be in interval [targetSegment*segmentAngle + R_final, (targetSegment+1)*segmentAngle + R_final)
+      // => R_final = pointerAngle - targetSegment*segmentAngle + k*TAU   (normalized)
+      
+      let rawFinalRotation = (-PI/2) - (targetSegment * segmentAngle);
+      // normalize to [0, TAU)
+      let finalRotation = ((rawFinalRotation % TAU) + TAU) % TAU;
+      
+      // Current rotation is currentRotation (already normalized)
+      // We need to add deltaRotation to currentRotation to get finalRotation.
+      let delta = finalRotation - currentRotation;
+      // Normalize delta to smallest direction? We want full spins + extra to make it exciting
+      // add minimum 5 full spins (10pi rad) to have spinning effect
+      const minFullSpins = 6 * TAU;  // 6 full rotations (2160 deg) for nice effect
+      let totalDelta = delta + minFullSpins;
+      // Ensure delta positive and big enough
+      if (totalDelta < 0) totalDelta += TAU;
+      
+      // animation timing
+      isSpinning = true;
+      spinBtn.disabled = true;
+      resultMessageDiv.innerHTML = "🌀 SPINNING... GOOD LUCK! 🌀";
+      resultMessageDiv.classList.remove("win-animation");
+      
+      const startRotation = currentRotation;
+      const startTimestamp = performance.now();
+      
+      function animateSpin(now) {
+        const elapsed = now - startTimestamp;
+        let t = Math.min(1, elapsed / spinDuration);
+        const easeT = easeOutCubic(t);
+        const newRotation = startRotation + totalDelta * easeT;
+        currentRotation = newRotation % TAU;
+        drawWheel();
+        
+        if (t < 1) {
+          animationId = requestAnimationFrame(animateSpin);
+        } else {
+          // animation finished - snap exactly to final computed rotation to avoid floating errors
+          currentRotation = finalRotation;
+          drawWheel();
+          // verify winning segment
+          const landedIndex = getCurrentSegmentIndex();
+          const winDiscount = DISCOUNT_VALUES[landedIndex];
+          const winText = SEGMENTS[landedIndex];
+          
+          // Show result with animation
+          resultMessageDiv.innerHTML = `🎉 YOU WON ${winText} OFF! 🎉`;
+          discountNoteSpan.innerHTML = `✨ Claim your $${winDiscount} discount ✨`;
+          resultMessageDiv.classList.add("win-animation");
+          setTimeout(() => {
+            if (resultMessageDiv) resultMessageDiv.classList.remove("win-animation");
+          }, 800);
+          
+          // optional: extra console check
+          console.log(`Landed on segment: ${winText}, index: ${landedIndex}, expected: ${targetSegment}`);
+          isSpinning = false;
+          spinBtn.disabled = false;
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+      }
+      
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(animateSpin);
+    }
+    
+    // reset / reinit wheel drawing on window resize or orientation change
+    window.addEventListener('resize', () => {
+      drawWheel();
+    });
+    
+    // attach spin event
+    spinBtn.addEventListener('click', () => {
+      if (!isSpinning) {
+        startSpin();
+      }
+    });
+    
+    // initial drawing and also add some sparkles (draw)
+    function init() {
+      resizeCanvas();
+      // random starting rotation for variety (but not necessary)
+      currentRotation = (Math.random() * TAU) % TAU;
+      drawWheel();
+      // set initial result display info
+      resultMessageDiv.innerHTML = "✨ SPIN THE WHEEL ✨";
+      discountNoteSpan.innerHTML = "$10 | $20 | $30 | $40 | $50 — try your luck!";
+    }
+    
+    init();
+  })();
+</script>
+</body>
+</html>
